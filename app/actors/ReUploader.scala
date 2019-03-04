@@ -1,12 +1,11 @@
 package actors
 
 import actors.ReUploader.ReUploadMessage
-import akka.actor.Actor
+import akka.actor.{Actor, ActorLogging}
 import akka.stream.ActorMaterializer
 import com.typesafe.config.Config
 import commons.{ErrorResponse, JsonFormats}
-import play.api.Logger
-import play.api.libs.json.{JsSuccess, Json}
+import play.api.libs.json.JsSuccess
 import play.api.libs.ws.{WSClient, WSResponse}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,7 +16,7 @@ object ReUploader {
 }
 
 class ReUploader(ws: WSClient, config: Config)(implicit val mat: ActorMaterializer)
-  extends Actor with JsonFormats{
+  extends Actor with ActorLogging with JsonFormats{
   val UploadUrl = "https://api.imgur.com/3/image"
   val ClientId = config.getString("imgur.clientId")
 
@@ -40,11 +39,11 @@ class ReUploader(ws: WSClient, config: Config)(implicit val mat: ActorMaterializ
 
           .map(r => r.status match {
             case 200 =>
-              Logger.info(s"Job ID:${self.path.name} succeeded. Image new url: ${(r.json \ "data" \ "link").as[String]}")
+              log.info("Image new url: {}", r.json \"data\" \"link\").as[String])
             case _ =>
               r.json.validate[ErrorResponse] match {
-                case JsSuccess(json, _) => Logger.error(s"Job ID:${self.path.name} failed. Reason: ${json.data.error}.")
-                case _ => Logger.error(s"Job ID:${self.path.name} failed. Error response cannot be parsed")
+                case JsSuccess(json, _) => log.error("Reason: {}.",  json.data.error)
+                case _ => log.error("Reason: Response cannot be parsed.")
               }
           })
       }
